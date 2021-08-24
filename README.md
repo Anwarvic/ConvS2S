@@ -11,3 +11,7 @@ parallelize them. Accordinng to the paper, Conv Seq2Seq outperformed the
 Attention model on both WMT’14 English-German and WMT’14 English-French
 translation while achieving faster results.
 
+
+<div align="Center">
+    <a href="https://arxiv.org/pdf/1705.03122.pdf"> <img src="docs/cover.png" width=500> </a>
+</div>

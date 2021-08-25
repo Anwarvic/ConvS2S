@@ -1,4 +1,6 @@
 numpy
 torch
 pandas
+torchtext
+revtok
 sacremoses

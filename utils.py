@@ -11,12 +11,11 @@ def load_conf(conf_path="conf.yaml"):
 
 def load_tokenizer(name, lang):
     if name == 'whitespace':
-        return get_tokenizer() #split
+        return get_tokenizer(None) #split
     elif name in {"spacy", "moses", "toktok", "revtok", "subword"}:
         return get_tokenizer(name, lang)
     else:
         raise ValueError("Unknown tokenizer: {}".format(name))
-
 
 def set_seed(seed):
     random.seed(seed)

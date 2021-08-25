@@ -1,0 +1,21 @@
+# data configs
+lower: yes #lowercase data
+tokenizer: whitespace #options: whitespace, moses, toktok, revtok, subword
+subword_tokenizer: bpe #options: bpe, unigram, char, word
+unk_token: <unk>
+sos_token: <s>  #start of sentence token
+eos_token: </s> #end of sentence token
+pad_token: <pad>
+min_freq: 2 #minimum frequency for rare words
+
+# language configs
+src: en
+tgt: de
+
+# model configs
+seed: 123
+embed_size: 512 #embedding size
+hidden_size: 512 #hidden size
+batch_size: 128 #batch size
+encoder_layers: 3 #number of layers of the encoder
+decoder_layers: 3 #number of layers of the decoder

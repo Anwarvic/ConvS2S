@@ -1,26 +1,26 @@
-class Tokenizer:
-    def tokenize(self, sentence):
-        raise NotImplementedError
+import yaml
+import torch
+import random
+import numpy as np
+from torchtext.data import get_tokenizer
 
-class WhiteSpaceTokenizer(Tokenizer):
-    def tokenizer(self, sentence):
-        return sentence.split()
+def load_conf(conf_path="conf.yaml"):
+    with open(conf_path, 'r') as stream:
+        return yaml.safe_load(stream)
 
-class SpacyTokenizer(Tokenizer):
-    def __init__(self, lang):
-        import spacy
-        self.nlp = spacy.load(lang)
-    
-    def tokenize(self, sentence):
-        return [tok.text for tok in self.nlp.tokenizer(sentence)]
 
 def load_tokenizer(name, lang):
     if name == 'whitespace':
-        return WhiteSpaceTokenizer()
-    elif name == "moses":
-        from sacremoses import MosesTokenize
-        return MosesTokenize()
-    elif name == "spacy":
-        return SpacyTokenizer(lang)
+        return get_tokenizer() #split
+    elif name in {"spacy", "moses", "toktok", "revtok", "subword"}:
+        return get_tokenizer(name, lang)
     else:
         raise ValueError("Unknown tokenizer: {}".format(name))
+
+
+def set_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True

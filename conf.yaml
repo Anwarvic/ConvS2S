@@ -14,8 +14,12 @@ tgt: de
 
 # model configs
 seed: 123
+epochs: 3
+clip: 0.1 #gradient clipping
+dropout: 0.25
 embed_size: 512 #embedding size
 hidden_size: 512 #hidden size
 batch_size: 128 #batch size
+kernel_size: 3 #encoder/decoder CNN kernel size
 encoder_layers: 3 #number of layers of the encoder
 decoder_layers: 3 #number of layers of the decoder

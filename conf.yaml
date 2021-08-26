@@ -15,6 +15,7 @@ tgt: de
 # model configs
 seed: 123
 epochs: 3
+max_length: 1024 #encouder/decoder maximum length
 clip: 0.1 #gradient clipping
 dropout: 0.25
 embed_size: 512 #embedding size

@@ -1,22 +1,26 @@
 from utils import *
+from model import *
 from dataloader import *
 from transform import TextTransform
+from train import train
 
 
 
 # load configurations
 CONF = load_conf()
-
 # add special characters to config
-# get vocabulary
 CONF["special_tokens"] = {
     CONF["unk_token"]: 0,
     CONF["pad_token"]: 1,
     CONF["sos_token"]: 2,
     CONF["eos_token"]: 3,
 }
+
 # set seed
 set_seed(CONF['seed'])
+
+# get device
+DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 # load tokenizers
 src_tokenizer = load_tokenizer(CONF['tokenizer'], CONF['src'])
@@ -38,3 +42,39 @@ train_dataloader = get_dataloader(train_data, src_transform, tgt_transform, CONF
 valid_dataloader = get_dataloader(valid_data, src_transform, tgt_transform, CONF)
 test_dataloader = get_dataloader(test_data, src_transform, tgt_transform, CONF)
 
+
+# create model
+encoder = Encoder(input_dim = len(src_vocab),
+                  emb_dim = CONF['embed_size'],
+                  hid_dim = CONF['hidden_size'],
+                  n_layers = CONF['encoder_layers'],
+                  kernel_size = CONF['kernel_size'],
+                  dropout = CONF['dropout'],
+                  device = DEVICE,
+                  max_length=CONF['max_length'],
+)
+decoder = Decoder(output_dim = len(tgt_vocab),
+                  emb_dim = CONF['embed_size'],
+                  hid_dim = CONF['hidden_size'],
+                  n_layers = CONF['decoder_layers'],
+                  kernel_size = CONF['kernel_size'],
+                  dropout = CONF['dropout'],
+                  tgt_pad_idx = CONF["special_tokens"][CONF['pad_token']],
+                  device = DEVICE,
+                  max_length=CONF['max_length'],
+)
+convs2s = Seq2Seq(encoder, decoder)
+
+# create optimizer and criterion
+optimizer = torch.optim.Adam(convs2s.parameters())
+criterion = torch.nn.CrossEntropyLoss(ignore_index = CONF["special_tokens"][CONF['pad_token']])
+
+# train
+train(  convs2s,
+        criterion,
+        train_dataloader,
+        valid_dataloader,
+        optimizer,
+        CONF["epochs"],
+        CONF["clip"],
+)

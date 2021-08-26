@@ -1,3 +1,4 @@
+import math
 import torch
 
 class Encoder(torch.nn.Module):
@@ -9,17 +10,17 @@ class Encoder(torch.nn.Module):
                  kernel_size,
                  dropout,
                  device,
-                 max_length = 100):
+                 max_length):
         super().__init__()
         
         assert kernel_size % 2 == 1, "Kernel size must be odd!"
         
         self.device = device
         
-        self.scale = torch.sqrt(torch.FloatTensor([0.5])).to(device)
+        self.scale = torch.FloatTensor([math.sqrt(0.5)]).to(device)
         
         self.tok_embedding = torch.nn.Embedding(input_dim, emb_dim)
-        self.pos_embedding = torch.nn.Embedding(input_dim, emb_dim)
+        self.pos_embedding = torch.nn.Embedding(max_length, emb_dim)
         
         self.emb2hid = torch.nn.Linear(emb_dim, hid_dim)
         self.hid2emb = torch.nn.Linear(hid_dim, emb_dim)
@@ -37,34 +38,30 @@ class Encoder(torch.nn.Module):
         src_len = src.shape[1]
         
         #create position tensor
-        pos = torch.arange(0, src_len).repeat(batch_size, 1).to(self.device)
+        pos = torch.arange(0, src_len).repeat(batch_size, 1).to(self.device) #src_len
         
         #embed tokens and positions
-        tok_embedded = self.tok_embedding(src)
-        pos_embedded = self.pos_embedding(pos)
-
-        #combine embeddings by elementwise summing
-        embedded = self.dropout(tok_embedded + pos_embedded)
+        tok_embedded = self.tok_embedding(src) #[batch_size, src_len, emb_dim]
+        pos_embedded = self.pos_embedding(pos) #[batch_size, src_len, emb_dim]
+        embedded = self.dropout(tok_embedded + pos_embedded) #[batch_size, src_len, emb_dim]
         
         #pass embedded through linear layer to convert from emb dim to hid dim
-        conv_input = self.emb2hid(embedded)
-        
-        #permute for convolutional layer
-        conv_input = conv_input.permute(0, 2, 1) 
+        conv_input = self.emb2hid(embedded) #[batch_size, src_len, hid_dim]
+        conv_input = conv_input.permute(0, 2, 1) #[batch_size, emb_dim, src_len]
         
         #begin convolutional blocks...
         for conv in self.convs:
-            conved = conv(self.dropout(conv_input))
-            conved = torch.nn.functional.glu(conved, dim = 1)
+            conved = conv(self.dropout(conv_input)) #[batch_size, 2*hid_dim, src_len]
+            conved = torch.nn.functional.glu(conved, dim = 1) #[batch_size, hid_dim, src_len]
             #apply residual connection
-            conved = (conved + conv_input) * self.scale
+            conved = (conved + conv_input) * self.scale #[batch_size, hid_dim, src_len]
             #set conv_input to conved for next loop iteration
             conv_input = conved
         
         #permute and convert back to emb dim
-        conved = self.hid2emb(conved.permute(0, 2, 1))
+        conved = self.hid2emb(conved.permute(0, 2, 1)) #[batch_size, src_len, hid_dim]
         #elementwise sum output (conved) and input (embedded) to be used for attention
-        combined = (conved + embedded) * self.scale
+        combined = (conved + embedded) * self.scale #[batch_size, src_len, emb_dim]
         return conved, combined
 
 
@@ -76,19 +73,19 @@ class Decoder(torch.nn.Module):
                  n_layers, 
                  kernel_size, 
                  dropout, 
-                 trg_pad_idx, 
+                 tgt_pad_idx, 
                  device,
-                 max_length = 100):
+                 max_length):
         super().__init__()
         
         self.kernel_size = kernel_size
-        self.trg_pad_idx = trg_pad_idx
+        self.tgt_pad_idx = tgt_pad_idx
         self.device = device
         
-        self.scale = torch.sqrt(torch.FloatTensor([0.5])).to(device)
+        self.scale = torch.FloatTensor([math.sqrt(0.5)]).to(device)
         
         self.tok_embedding = torch.nn.Embedding(output_dim, emb_dim)
-        self.pos_embedding = torch.nn.Embedding(output_dim, emb_dim)
+        self.pos_embedding = torch.nn.Embedding(max_length, emb_dim)
         
         self.emb2hid = torch.nn.Linear(emb_dim, hid_dim)
         self.hid2emb = torch.nn.Linear(hid_dim, emb_dim)
@@ -120,46 +117,47 @@ class Decoder(torch.nn.Module):
         attended_combined = (conved + attended_encoding.permute(0, 2, 1)) * self.scale
         return attention, attended_combined
         
-    def forward(self, trg, encoder_conved, encoder_combined):
-        batch_size = trg.shape[0]
-        trg_len = trg.shape[1]
+    def forward(self, tgt, encoder_conved, encoder_combined):
+        batch_size = tgt.shape[0]
+        tgt_len = tgt.shape[1]
         #create position tensor
-        pos = torch.arange(0, trg_len).repeat(batch_size, 1).to(self.device)
+        pos = torch.arange(0, tgt_len).repeat(batch_size, 1).to(self.device) #[batch_size, tgt_len]
+        
         #embed tokens and positions
-        tok_embedded = self.tok_embedding(trg)
-        pos_embedded = self.pos_embedding(pos)
-        #combine embeddings by elementwise summing
-        embedded = self.dropout(tok_embedded + pos_embedded)
-        #pass embedded through linear layer to go through emb dim -> hid dim
-        conv_input = self.emb2hid(embedded)
-        #permute for convolutional layer
-        conv_input = conv_input.permute(0, 2, 1) 
-        batch_size = conv_input.shape[0]
-        hid_dim = conv_input.shape[1]
-        for i, conv in enumerate(self.convs):
+        tok_embedded = self.tok_embedding(tgt) #[batch_size, tgt_len, emb_dim]
+        pos_embedded = self.pos_embedding(pos) #[batch_size, tgt_len, emb_dim]      
+        embedded = self.dropout(tok_embedded + pos_embedded) #[batch_size, tgt_len, emb_dim]
+
+        #pass embedded through linear layer to go through emb_dim to hid_dim
+        conv_input = self.emb2hid(embedded) #[batch_size, tgt_len, hid_dim]
+        conv_input = conv_input.permute(0, 2, 1) #[batch_size, emb_dim, tgt_len]
+
+
+        hid_dim = conv_input.shape[1] #hid_dim
+        for conv in self.convs:
             #apply dropout
-            conv_input = self.dropout(conv_input)
-            #need to pad so decoder can't "cheat"
+            conv_input = self.dropout(conv_input) #[batch_size, emb_dim, tgt_len]
+            #need to pad so decoder can't cheat: [batch_size, hid_dim, kernel_size-1]
             padding = torch.zeros(batch_size, 
                                   hid_dim, 
-                                  self.kernel_size - 1).fill_(self.trg_pad_idx).to(self.device)
-            padded_conv_input = torch.cat((padding, conv_input), dim = 2)
+                                  self.kernel_size - 1).fill_(self.tgt_pad_idx).to(self.device)
+            padded_conv_input = torch.cat((padding, conv_input), dim = 2) #[batch _size, hid_dim, tgt_len + kernel_size - 1]
             #pass through convolutional layer
-            conved = conv(padded_conv_input)
+            conved = conv(padded_conv_input) #[batch_size, 2*hid dim, tgt_len]
             #pass through GLU activation function
-            conved = torch.nn.functional.glu(conved, dim = 1)
+            conved = torch.nn.functional.glu(conved, dim = 1) #[batch_size, hid_dim, tgt_len]
             #calculate attention
             attention, conved = self.calculate_attention(embedded, 
                                                          conved, 
                                                          encoder_conved, 
                                                          encoder_combined)
             #apply residual connection
-            conved = (conved + conv_input) * self.scale
+            conved = (conved + conv_input) * self.scale #[batch_size, hid_dim, tgt_len]
             #set conv_input to conved for next loop iteration
             conv_input = conved
             
-        conved = self.hid2emb(conved.permute(0, 2, 1))
-        output = self.fc_out(self.dropout(conved))
+        conved = self.hid2emb(conved.permute(0, 2, 1)) #[batch_size, tgt_len, embid_dim]
+        output = self.fc_out(self.dropout(conved)) #[batch_size, tgt_len, output_dim]
         return output, attention
 
 
@@ -169,7 +167,9 @@ class Seq2Seq(torch.nn.Module):
         self.encoder = encoder
         self.decoder = decoder
         
-    def forward(self, src, trg):
+    def forward(self, src, tgt):
+        # [batch_size, src_len, emb_dim], [batch_size, src_len, emb_dim]
         encoder_conved, encoder_combined = self.encoder(src)
-        output, attention = self.decoder(trg, encoder_conved, encoder_combined)
+        # [batch_size, tgt_len-1, output_dim], [batch_size, tgt_len-1, src_len]
+        output, attention = self.decoder(tgt, encoder_conved, encoder_combined)
         return output, attention

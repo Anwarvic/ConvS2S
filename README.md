@@ -8,15 +8,19 @@ The aim of this paper is to use a Convolution networks as a new architecture
 for translation. One of the major defects of Seq2Seq models is that it can’t
 process words in parallel. For a large corpus of text, this increases the time
 spent translating the text. CNNs can help us solve this problem as we can 
-parallelize them. Accordinng to the paper, Conv Seq2Seq outperformed the
-Attention model on both WMT’14 English-German and WMT’14 English-French
-translation while achieving faster results.
-
+parallelize them. 
 
 <div align="Center">
     <a href="https://arxiv.org/pdf/1705.03122.pdf"> <img src="assets/cover.png" width=500> </a>
 </div>
 
+According to the paper, Conv Seq2Seq outperformed the Attention model on both
+WMT’14 English-German and WMT’14 English-French translation while achieving
+faster results:
+
+<div align="Center">
+    <a href="https://arxiv.org/pdf/1705.03122.pdf"> <img src="assets/benchmark.png" width=500> </a>
+</div>
 
 # Prerequisites
 
@@ -37,7 +41,7 @@ python -m spacy download en_core_web_sm
 
 The data used in this project can be found in torchtext API, and they are:
 
-- [Mutli30k](https://pytorch.org/text/0.10.0/datasets.html#multi30k).
+- [Mutli30k](https://pytorch.org/text/0.10.0/datasets.html#multi30k)
 - [IWSLT2016](https://pytorch.org/text/0.10.0/datasets.html#iwslt2016)
 - [IWSLT2017](https://pytorch.org/text/0.10.0/datasets.html#iwslt2017)
 
@@ -50,20 +54,25 @@ to use your own data, follow the same convention.
 # Model
 
 The ConvS2S model can be found in the `model.py` script and the configuration
-can be found in the `conf.yaml` file. All default values in the configuration
-file are from the paper.
+can be found in the `conf.yaml` file. All values in the configuration file are
+way smaller than the ones in the paper as I was implementing this code on my 
+machine. For better results, check the paper!
 
 <div align="Center">
     <a href="https://arxiv.org/pdf/1705.03122.pdf"> <img src="assets/model.png" width=500> </a>
 </div>
+
+<br><br>
 
 # TODO:
 
 This project is a learning journey, so there are a lot of things to be done:
 
 - [ ] Load data as iterator.
+- [ ] Set the configuration values from the paper.
 - [ ] Provide BLEU score when evaluating.
 - [ ] Translate using Beam Search.
+- [ ] Enable sub-word Tokenization.
 - [ ] Train the model on WMT’14 English-German. 
 - [ ] Train the model on WMT’14 English-French.
 

@@ -1,8 +1,7 @@
 # Conv-Seq2Seq
 This is my attempt to implement the "[Convolutional Sequence to Sequence
 Learning](https://arxiv.org/pdf/1705.03122.pdf)" paper published by FacebookAI
-in 2017 using PyTorch. My implementation has been done fully using PyTorch and
-PyTorchAudio.
+in 2017. My implementation has been done fully using PyTorch and PyTorchText.
 
 The aim of this paper is to use a Convolution networks as a new architecture
 for translation. One of the major defects of Seq2Seq models is that it can’t
@@ -19,7 +18,7 @@ WMT’14 English-German and WMT’14 English-French translation while achieving
 faster results:
 
 <div align="Center">
-    <a href="https://arxiv.org/pdf/1705.03122.pdf"> <img src="assets/benchmark.png" width=500> </a>
+    <a href="https://arxiv.org/pdf/1705.03122.pdf"> <img src="assets/benchmark.png"> </a>
 </div>
 
 # Prerequisites

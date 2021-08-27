@@ -18,9 +18,9 @@ epochs: 3
 max_length: 1024 #encouder/decoder maximum length
 clip: 0.1 #gradient clipping
 dropout: 0.25
-embed_size: 512 #embedding size
-hidden_size: 512 #hidden size
-batch_size: 128 #batch size
+embed_size: 32 #embedding size
+hidden_size: 32 #hidden size
+batch_size: 64 #batch size
 kernel_size: 3 #encoder/decoder CNN kernel size
-encoder_layers: 3 #number of layers of the encoder
-decoder_layers: 3 #number of layers of the decoder
+encoder_layers: 2 #number of layers of the encoder
+decoder_layers: 2 #number of layers of the decoder

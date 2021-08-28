@@ -1,3 +1,7 @@
+"""
+Adapted from this blog post:
+https://charon.me/posts/pytorch/pytorch_seq2seq_5
+"""
 import math
 import torch
 
